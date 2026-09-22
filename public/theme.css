@@ -1,0 +1,17 @@
+/* The app's accent colors. style.css derives text and fill shades from these. */
+:root {
+  --accent: #6d40ff;   /* chrome and selection: tabs, topbar buttons, toggles, focus, crumbs */
+  --accent-2: #14b8a6; /* files: folder icons, transfer progress, pull-to-refresh armed */
+  --accent-3: #ffb020; /* marked things: the favorites star */
+
+  /* Server identity: one per saved server, picked by a hash of its id
+     (serverHue in app.js). Same lightness, so no server stands out. */
+  --hue-0: #e28178;
+  --hue-1: #e2c878;
+  --hue-2: #a5e278;
+  --hue-3: #78e2ad;
+  --hue-4: #78d1e2;
+  --hue-5: #789ce2;
+  --hue-6: #a578e2;
+  --hue-7: #e278c8;
+}

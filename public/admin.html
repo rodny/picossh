@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#131313">
+  <meta name="format-detection" content="telephone=no, email=no, address=no, date=no">
+  <title>picossh admin</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <!-- Signed out: the app's own sign-in (same password, same Face ID passkeys, same cookie). -->
+  <main id="view-login" class="login-view" hidden>
+    <form id="login-form" class="login" autocomplete="on">
+      <img src="/icon.svg" alt="" width="64" height="64">
+      <h1>picossh admin</h1>
+      <button type="button" id="login-passkey" class="btn primary block" hidden>Sign in with Face ID</button>
+      <div id="login-or" class="or" hidden><span>or</span></div>
+      <input type="text" name="username" value="picossh" autocomplete="username" hidden>
+      <div class="reveal">
+        <input type="password" id="login-password" name="password" class="input" placeholder="App password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" id="login-submit" class="btn block">Sign in</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+  </main>
+
+  <div id="view-dash" hidden>
+    <header class="top">
+      <a href="/admin" class="brand"><img src="/icon.svg" alt="" width="28" height="28"><span>picossh <b>admin</b></span></a>
+      <span id="updated" class="muted small" aria-live="polite"></span>
+      <nav class="top-actions">
+        <a class="btn small" href="/">Open picossh</a>
+        <button type="button" id="signout" class="btn small">Sign out</button>
+      </nav>
+    </header>
+
+    <main class="dash">
+      <p id="dash-error" class="banner error" role="alert" hidden></p>
+
+      <section class="tiles" id="tiles" aria-label="Summary"></section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Activity</h2>
+          <div class="segmented" role="group" aria-label="Time range" id="ranges">
+            <button type="button" data-range="3600" aria-pressed="true">1 h</button>
+            <button type="button" data-range="21600" aria-pressed="false">6 h</button>
+            <button type="button" data-range="86400" aria-pressed="false">24 h</button>
+          </div>
+        </div>
+        <div class="charts">
+          <figure class="chart" id="chart-activity"></figure>
+          <figure class="chart" id="chart-traffic"></figure>
+          <figure class="chart" id="chart-memory"></figure>
+          <figure class="chart" id="chart-requests"></figure>
+        </div>
+        <p class="note">Kept in memory since the server started, up to 24 hours.</p>
+      </section>
+
+      <section class="card" id="devices-card">
+        <div class="card-head"><h2>Client devices</h2><span class="muted small" id="devices-sum"></span></div>
+        <div id="devices"></div>
+      </section>
+
+      <section class="card" id="sessions-card">
+        <div class="card-head">
+          <h2>SSH connections</h2>
+          <div class="segmented" role="group" aria-label="Show" id="sessions-filter">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="unused" aria-pressed="false">Unused</button>
+          </div>
+          <div class="head-actions">
+            <button type="button" id="close-zombies" class="btn small danger">Close all unused</button>
+            <button type="button" id="close-all" class="btn small danger">Close all</button>
+          </div>
+        </div>
+        <p class="note" id="unused-note" hidden>Unused (zombie) connections are ones no page is using: no terminal is attached, no transfer is running and nothing touched them for the unused-connection time (a minute unless changed under Server settings). They close when the background time their shells got runs out, unless it is Forever: those stay until closed here, picossh restarts or the SSH server drops them. Closing one ends its shells.</p>
+        <div id="sessions"></div>
+      </section>
+
+      <section class="card" id="buffers-card">
+        <div class="card-head"><h2>Replay buffers</h2><span class="muted small" id="buffers-sum"></span></div>
+        <p class="note">Each shell keeps its latest output so a page that comes back can repaint its screen. While no page is attached, what the shell prints fills this buffer; once more than the limit has come out since the page left, the oldest of it is gone, and the page is told output was lost when it returns.</p>
+        <div id="buffers"></div>
+      </section>
+
+      <div class="two-col">
+        <section class="card" id="server-card">
+          <div class="card-head"><h2>Server process</h2></div>
+          <div id="server"></div>
+        </section>
+        <section class="card" id="events-card">
+          <div class="card-head"><h2>Recent events</h2></div>
+          <ol id="events" class="events"></ol>
+        </section>
+      </div>
+
+      <section class="card" id="settings-card">
+        <div class="card-head"><h2>Server settings</h2><span class="muted small" id="settings-status" role="status"></span></div>
+        <form id="settings-form" class="settings">
+          <div id="settings-fields" class="settings-fields"></div>
+          <div class="settings-actions">
+            <button type="submit" id="settings-save" class="btn small primary" disabled>Save</button>
+            <button type="button" id="settings-undo" class="btn small" disabled>Undo changes</button>
+          </div>
+        </form>
+        <p class="note">Saved on the server and used at once, without a restart.</p>
+      </section>
+
+      <section class="card" id="closed-card">
+        <div class="card-head"><h2>Recently closed</h2></div>
+        <div id="closed"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="confirm" class="dialog">
+    <form method="dialog">
+      <p id="confirm-text"></p>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn">Cancel</button>
+        <button value="ok" id="confirm-ok" class="btn danger">Close</button>
+      </div>
+    </form>
+  </dialog>
+  <div id="tooltip" class="tooltip" role="status" hidden></div>
+  <script src="/admin.js"></script>
+</body>
+</html>

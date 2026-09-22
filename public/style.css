@@ -1,0 +1,1171 @@
+:root {
+  --bg: #131313;
+  --panel: #1c1c1c;
+  --panel-2: #262626;
+  --border: #353535;
+  --text: #eaeaea;
+  --muted: #9d9d9d;
+  /* Primary buttons, key on-state, the Enter key, spinners, handles. */
+  --bright: #eeeeee;
+  --bright-ink: #1c1c1c;
+  --good: #7ed38f;
+  --danger: #ff7b72;
+  --warn: #f0c35b;
+  /* The accents are in theme.css. Text shades are mixed toward white, so they
+     stay readable at 11-16px on --bg (a test checks 4.5:1);
+     soft shades are fills. */
+  --accent-text: color-mix(in srgb, var(--accent) 65%, white);
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-2-text: color-mix(in srgb, var(--accent-2) 65%, white);
+  --accent-2-soft: color-mix(in srgb, var(--accent-2) 22%, transparent);
+  --accent-3-text: color-mix(in srgb, var(--accent-3) 65%, white);
+  --accent-3-soft: color-mix(in srgb, var(--accent-3) 22%, transparent);
+  /* Corner radii: keys, tools and chips; buttons and fields; cards and lists; sheets. */
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 14px;
+  --radius-xl: 18px;
+  /* Grays outside the panel scale. */
+  --key: #404040;
+  --key-hover: #4b4b4b;
+  --key-action: #2f2f2f;
+  --key-action-hover: #3c3c3c;
+  --key-pressed: #626262;
+  --key-shadow: #0b0b0b;
+  --popup: #575757;
+  --toast: #313131;
+  --screen: #0e0e0e;
+  --code: #dddddd;
+  --gutter-ink: #676767;
+  --gutter-line: #252525;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Bottom bars sit closer to the home indicator than the full inset (34px). */
+  --safe-bottom-bar: max(0px, calc(env(safe-area-inset-bottom, 0px) - 20px));
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, input, textarea, select { font: inherit; color: inherit; }
+button { touch-action: manipulation; cursor: pointer; }
+
+#app {
+  position: fixed;
+  top: var(--vvtop, 0px);
+  bottom: var(--vvgap, 0px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ views */
+
+.view {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+.view.active { display: flex; }
+#view-loading { align-items: center; justify-content: center; }
+/* The built-in keyboard slides down out of sight here (slideKeyboard). */
+#panel-terminal { overflow: hidden; }
+#view-lock { z-index: 50; background: var(--bg); }
+
+.topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: calc(52px + var(--safe-top));
+  padding: var(--safe-top) 12px 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.topbar h1 { flex: 1; margin: 0 4px; font-size: 20px; letter-spacing: -0.3px; }
+.topbar-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.topbar-title span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The session's server name opens its connection settings. */
+button.topbar-title { height: 44px; padding: 0 4px; border: 0; border-radius: var(--radius-m); background: none; text-align: left; }
+button.topbar-title:active { background: var(--panel-2); }
+/* iOS data detectors link things that look like emails (user@host) */
+a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; pointer-events: none; }
+
+.icon-btn, .text-btn {
+  min-width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--accent-text);
+  font-size: 26px;
+  line-height: 1;
+}
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; }
+.icon-btn .icon { width: 24px; height: 24px; }
+.text-btn { font-size: 16px; padding: 0 10px; }
+.icon-btn:active, .text-btn:active { background: var(--panel-2); }
+.danger { color: var(--danger) !important; }
+
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+/* Pull to refresh (pullToRefresh in app.js): a refresh icon brought down by
+   --pull, spinning while it loads. `push` (lists) opens above the content,
+   which comes down with the finger; `float` (a file) is a round icon fixed
+   over the top of the scroller, so nothing under it moves. */
+.ptr { color: var(--muted); pointer-events: none; }
+.ptr.ready { color: var(--accent-2-text); }
+.ptr.spinning .icon { animation: spin 0.8s linear infinite; }
+.ptr.push {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: var(--pull, 0px);
+  overflow: hidden;
+}
+.ptr.push .icon { width: 24px; height: 24px; margin-bottom: 8px; }
+.ptr.push.settle { transition: height 0.2s ease; }
+.ptr.float {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(calc(var(--pull, 0px) - 44px));
+}
+.ptr.float.shown { opacity: 1; }
+.ptr.float .icon { width: 22px; height: 22px; }
+.ptr.float.settle { transition: transform 0.2s ease, opacity 0.2s ease; }
+.tab { display: none; padding: 14px 14px 24px; }
+.tab.active { display: block; }
+/* A swipe (sideSwipe in app.js): what lies beside what is on screen peeks in
+   as it is dragged. On Home the tab beside, over the scroller's viewport; on
+   Files the folder before, as it was last listed, or the Terminal panel. */
+#view-home main { position: relative; }
+.swiping { overflow: hidden; }
+#view-home .tab.peek { display: block; position: absolute; left: 0; right: 0; overflow: hidden; pointer-events: none; animation: none; }
+.panel.peek { display: flex; pointer-events: none; animation: none; }
+.peek-list { display: none; }
+.peek-list.peek { display: block; position: absolute; left: 0; right: 0; overflow: hidden; pointer-events: none; }
+/* A view, tab or panel slides in from the side it sits on (--slide, set by
+   slideDirection in app.js) as it is shown. Only opacity and transform
+   animate, so it stays on the compositor. */
+.view.active, .tab.active, .panel.active { animation: slide-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+#view-lock.active { animation-name: fade; }
+@keyframes slide-in { from { opacity: 0; transform: translateX(var(--slide, 0)); } }
+
+.tabbar {
+  flex: none;
+  display: flex;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom-bar);
+}
+.tabbar button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  transition: color 0.15s;
+}
+/* The active tab's icon and label sit together on a pill. */
+.tab-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 64px;
+  padding: 4px 12px 3px;
+  border-radius: var(--radius-l);
+  transition: background-color 0.15s;
+}
+.tabbar .icon { width: 24px; height: 24px; }
+.tabbar button.active { color: var(--accent-text); font-weight: 600; }
+.tabbar button.active .tab-pill { background: var(--accent-soft); }
+body.kb-open .tabbar { display: none; }
+
+.dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.dot.open { background: var(--good); }
+.dot.connecting { background: var(--warn); }
+.dot.closed { background: var(--danger); }
+
+/* ------------------------------------------------------------------ common */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--panel-2);
+  font-weight: 600;
+}
+.btn:active { filter: brightness(1.2); transform: scale(0.985); }
+.btn:disabled { opacity: 0.5; }
+.btn.primary { background: var(--bright); border-color: var(--bright); color: var(--bright-ink); }
+.btn.danger { color: var(--danger); }
+.btn.block { display: flex; width: 100%; }
+.btn.small { min-height: 36px; padding: 0 12px; font-size: 14px; border-radius: var(--radius-s); }
+
+/* Material icons from the sprite in index.html; sized by their container. */
+.icon { flex: none; width: 1em; height: 1em; fill: currentColor; vertical-align: -0.125em; }
+.btn .icon, .list-item.button .icon, .icon-btn.small .icon { width: 20px; height: 20px; }
+
+.input, .textarea, .select {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg);
+  font-size: 16px; /* 16px stops iOS zooming on focus */
+  outline: none;
+}
+.input:focus, .textarea:focus, .select:focus { border-color: var(--accent); }
+.textarea { min-height: 120px; font-family: var(--mono); font-size: 14px; resize: vertical; }
+.select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+
+/* A password field with an eye button inside its right edge (app.js revealable()),
+   or Go to's path with its copy button. */
+.reveal { position: relative; }
+.reveal > .input { padding-right: 52px; }
+.reveal-btn { position: absolute; top: 2px; right: 2px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: calc(var(--radius-m) - 2px); background: none; color: var(--muted); transition: background-color 0.15s, color 0.15s; }
+.reveal-btn .icon { width: 22px; height: 22px; }
+.reveal-btn:active { background: var(--panel-2); }
+.reveal-btn[aria-pressed="true"] { color: var(--text); }
+@media (hover: hover) { .reveal-btn:hover { background: var(--panel-2); color: var(--text); } }
+/* Edge draws its own reveal button in password fields. */
+.reveal > .input::-ms-reveal { display: none; }
+
+.field { display: block; margin-bottom: 14px; }
+.field > .label { display: block; margin: 0 0 6px 2px; color: var(--muted); font-size: 13px; }
+.field .hint { display: block; margin: 6px 2px 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.row { display: flex; gap: 10px; }
+.row > * { flex: 1; min-width: 0; }
+.row > .narrow { flex: 0 0 96px; }
+
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 8px; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+.segmented { display: flex; padding: 3px; border-radius: var(--radius-m); background: var(--bg); border: 1px solid var(--border); }
+.segmented button { flex: 1; min-height: 40px; border: 0; border-radius: var(--radius-s); background: none; color: var(--muted); font-weight: 600; font-size: 14px; }
+.segmented button.active { background: var(--panel-2); color: var(--text); }
+
+.error { color: var(--danger); min-height: 1.4em; margin: 8px 2px 0; font-size: 14px; overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); }
+.empty { text-align: center; color: var(--muted); padding: 40px 20px; }
+.empty > .icon { display: block; width: 48px; height: 48px; margin: 0 auto 14px; opacity: 0.55; }
+.empty p { margin: 0 0 16px; }
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--bright);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.spinner.big { width: 36px; height: 36px; border-width: 3px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#toast {
+  position: fixed;
+  left: 50%;
+  top: calc(12px + var(--safe-top));
+  z-index: 200;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--toast) 88%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  font-size: 14px;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#toast.error { color: var(--danger); }
+#toast { display: flex; align-items: center; gap: 8px; }
+#toast > .icon { width: 18px; height: 18px; color: var(--good); }
+#toast.error > .icon { color: var(--danger); }
+
+/* ------------------------------------------------------------------ login */
+
+#view-login, #view-lock { align-items: center; justify-content: center; overflow-y: auto; }
+.login {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px 20px calc(24px + var(--safe-bottom));
+  text-align: center;
+}
+.login h1 { margin: 10px 0 26px; font-size: 28px; letter-spacing: -0.5px; }
+.login-icon { position: relative; border-radius: 18px; }
+/* A soft glow of the accent behind the app icon. */
+.login::before { content: ""; display: block; width: 220px; height: 220px; margin: -74px auto -146px; border-radius: 50%; background: radial-gradient(closest-side, var(--accent-soft), transparent); pointer-events: none; }
+.login .btn, .login .input { margin-bottom: 12px; }
+.or { display: flex; align-items: center; gap: 10px; margin: 6px 0 16px; color: var(--muted); font-size: 13px; }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+
+/* ------------------------------------------------------------------ cards */
+
+.card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--panel);
+  overflow: hidden;
+}
+.card-main {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.card-main:active, .card-side:active { background: var(--panel-2); }
+.card-main:active { transform: scale(0.985); }
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; }
+.card-title .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-sub { margin-top: 3px; color: var(--muted); font-size: 14px; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Its own row under the card's buttons, with a Copy button. */
+.card-error { flex: 0 0 100%; display: flex; align-items: center; gap: 4px; margin-top: -8px; padding: 0 4px 4px 16px; color: var(--danger); font-size: 13px; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.card-error .grow { flex: 1; min-width: 0; }
+.card-error .icon-btn.small .icon { width: 18px; height: 18px; }
+.card-side {
+  flex: none;
+  width: 52px;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+}
+.card-side .icon { width: 22px; height: 22px; }
+.badge { flex: none; padding: 1px 7px; border-radius: 20px; background: color-mix(in srgb, currentColor 16%, transparent); color: var(--text); font-size: 11px; font-weight: 600; }
+/* Connections tab: when it started, its id, and when it closes on its own. */
+.card-meta { margin-top: 3px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.badge.state-background { color: var(--warn); }
+.badge.state-attached, .badge.open { color: var(--good); }
+.key-public { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--bg); }
+/* Setting a server up for a Face ID key: numbered steps on the key itself,
+   each with a command to copy into a terminal. Folded away until asked for. */
+.steps { margin-top: 14px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--panel); }
+.steps > summary { padding: 12px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.steps > ol { margin: 0; padding: 0 14px 14px 32px; }
+.steps li { margin-top: 16px; }
+.steps li::marker { color: var(--muted); }
+.step-title { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.step-note { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.cmd { margin-top: 8px; }
+.cmd .key-public { user-select: all; }
+.cmd .btn { margin-top: 6px; }
+/* A note in a bottom sheet, where .section does not apply. */
+.sheet .note { margin: 6px 2px 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+/* Terminal text to copy from: rows as the terminal shows them, scrolled sideways. */
+.card .spinner { margin-left: auto; }
+
+/* A notice above a list: a hint (the install hint), or .warn (the list could
+   not be refreshed, so what is shown may be out of date). The icon, border and
+   tint follow the text color. */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 6px 10px 12px;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: var(--radius-l);
+  background: color-mix(in srgb, currentColor 5%, var(--panel));
+  color: var(--text);
+  font-size: 14px;
+}
+.notice.warn { color: var(--warn); font-size: 13px; }
+.notice.error { color: var(--danger); font-size: 13px; }
+.notice > .icon { width: 20px; height: 20px; }
+.notice .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.card-error > .icon { width: 16px; height: 16px; margin-right: 2px; }
+.icon-btn.small { min-width: 36px; height: 36px; font-size: 22px; color: var(--muted); }
+
+.section { margin: 4px 0 26px; }
+.section h2 { margin: 0 4px 10px; color: var(--muted); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.section .note { margin: 8px 4px 0; color: var(--muted); font-size: 13px; }
+.list { border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--panel); overflow: hidden; }
+.card, .list, .notice { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.35); }
+/* Dividers start at the text, as in iOS lists: drawn by ::before, inset by --inset. */
+.list-item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 12px 8px 16px; border: 0; }
+.list-item + .list-item::before { content: ""; position: absolute; top: 0; left: var(--inset, 16px); right: 0; border-top: 1px solid var(--border); pointer-events: none; }
+.list-item .grow { flex: 1; min-width: 0; }
+.list-item .sub { color: var(--muted); font-size: 13px; }
+.list-item.button { width: 100%; background: none; text-align: left; }
+.list-item.button:has(> .icon:first-child) { --inset: 46px; }
+.list-item.button:active { background: var(--panel-2); }
+.snippet-search { margin-bottom: 10px; }
+.switch { width: 50px; height: 30px; accent-color: var(--accent); }
+
+/* ------------------------------------------------------------------ sheets */
+
+/* Sized to the visual viewport (set from JS) so the iOS keyboard never covers the sheet. */
+.sheet-backdrop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--vvtop, 0px);
+  bottom: var(--vvgap, 0px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: dim 0.35s;
+}
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100% - var(--safe-top) - 12px);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  animation: rise 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* The grabber pill, as on iOS sheets. */
+.sheet::before { content: ""; flex: none; align-self: center; width: 36px; height: 5px; margin-top: 6px; border-radius: 3px; background: var(--border); }
+/* A long form (openSheet `tall`) takes up to just below the status bar,
+   like an iOS page sheet, however much it holds. */
+.sheet.tall { height: calc(100% - var(--safe-top) - 12px); }
+.sheet-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.sheet-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 17px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* iOS-style round header buttons: × or ‹ on the left, ✓ on the right. */
+.round-btn, .round-btn-space { flex: none; width: 36px; height: 36px; }
+.round-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: var(--text); }
+.round-btn .icon { width: 22px; height: 22px; }
+.round-btn.primary { background: var(--bright); color: var(--bright-ink); }
+.round-btn:active { filter: brightness(1.3); transform: scale(0.985); }
+.round-btn:disabled { opacity: 0.4; }
+.round-btn .spinner { width: 18px; height: 18px; border-top-color: var(--bright-ink); }
+.topbar .round-btn { margin: 0 4px; }
+.sheet-body { flex: 1; overflow-y: auto; padding: 16px 16px calc(20px + var(--safe-bottom)); overscroll-behavior: contain; }
+body.kb-open .sheet-body { padding-bottom: 20px; }
+.sheet-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.action-list .btn { justify-content: flex-start; margin-bottom: 8px; }
+.confirm-backdrop { z-index: 110; }
+.confirm-message { margin: 6px 2px 16px; font-size: 16px; line-height: 1.45; overflow-wrap: anywhere; }
+@keyframes rise { from { transform: translateY(100%); } }
+@keyframes fade { from { opacity: 0; } }
+/* Only the backdrop's shade fades: the sheet on it stays solid. */
+@keyframes dim { from { background-color: rgba(0, 0, 0, 0); } }
+
+/* ------------------------------------------------------------------ session */
+
+.session-main { flex: 1; position: relative; min-height: 0; }
+.panel { position: absolute; inset: 0; display: none; flex-direction: column; }
+.panel.active { display: flex; }
+
+#terminals { flex: 1; position: relative; min-height: 0; overflow: hidden; background: var(--screen); }
+.term { position: absolute; inset: 0; padding: 4px 0 0 6px; display: none; }
+.term.active { display: block; }
+.term .xterm { height: 100%; }
+.term .xterm-viewport { overscroll-behavior: contain; }
+
+.term-banner {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* A phone with its keyboard open can leave the terminal a few rows: the
+     banner stays inside it and scrolls. */
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: rgba(27, 27, 27, 0.96);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+.term-banner .msg { flex: none; font-size: 14px; }
+.term-banner .actions { flex: none; display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 480px) {
+  .term-banner { left: 8px; right: 8px; bottom: 8px; max-height: calc(100% - 16px); gap: 8px; padding: 8px 10px; }
+  .term-banner .msg { font-size: 13px; }
+  .term-banner .actions { gap: 6px; }
+  .term-banner .btn.small { min-height: 32px; padding: 0 10px; font-size: 13px; }
+}
+
+.keybar {
+  flex: none;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.keybar[hidden] { display: none; }
+body:not(.kb-open) .keybar { padding-bottom: 0; }
+.keyrow { display: flex; align-items: center; height: 46px; }
+.keyrow .keys {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+.keyrow .keys::-webkit-scrollbar { display: none; }
+/* Keycaps, matching the mobile keyboard below. */
+.key {
+  flex: none;
+  min-width: 40px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--key);
+  box-shadow: 0 1px 0 var(--key-shadow);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 15px;
+  white-space: nowrap;
+  touch-action: pan-x;
+  cursor: pointer;
+}
+.key.wide { font-family: inherit; font-size: 14px; }
+.key.chip { color: var(--warn); }
+.key.action-key { background: var(--key-action); }
+.key.pressed { background: var(--key-pressed); }
+.key.on { background: var(--bright); color: var(--bright-ink); }
+.key.locked { box-shadow: inset 0 -3px 0 var(--bright-ink), 0 1px 0 var(--key-shadow); }
+.key.icon-key { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; font-size: 14px; }
+.key.icon-key .icon { width: 20px; height: 20px; }
+@media (hover: hover) {
+  .key:hover { background: var(--key-hover); }
+  .key.action-key:hover { background: var(--key-action-hover); }
+  .key.on:hover { background: var(--bright); }
+}
+/* Snippets and Hide keyboard stay put while the keys beside them scroll. */
+.keys-fixed {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 100%;
+  padding: 0 4px 0 6px;
+  border-left: 1px solid var(--border);
+}
+
+/* Magnifier above the finger while selecting terminal text. */
+.term-loupe {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+}
+.term-loupe canvas { display: block; }
+
+/* Drag handles at the two ends of a terminal selection. The element is a
+   zero-width line on the selection's outer edge, as tall as a row; the knob
+   sits above it for the start and below it for the end (the other way round
+   on the top and bottom rows, where there is no room), and the finger area
+   around the knob keeps off the row, so its text can still be long-pressed. */
+.term-handle {
+  position: absolute;
+  z-index: 5;
+  width: 0;
+  pointer-events: none;
+  touch-action: none;
+}
+.term-handle[hidden] { display: none; }
+.term-handle .stem {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--bright);
+}
+.term-handle .knob {
+  position: absolute;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bright);
+}
+.term-handle.above .knob { top: -12px; }
+.term-handle.below .knob { bottom: -12px; }
+.term-handle::after {
+  content: '';
+  position: absolute;
+  left: -22px;
+  width: 44px;
+  height: 40px;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: grab;
+}
+.term-handle.above::after { bottom: 100%; }
+.term-handle.below::after { top: 100%; }
+
+/* files */
+.files-toolbar {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+.files-toolbar::-webkit-scrollbar { display: none; }
+.tool { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--panel-2); font-size: 14px; white-space: nowrap; }
+.tool .icon { width: 18px; height: 18px; }
+/* Buttons are icons only (the label is in aria-label/title); only the selects show text. */
+.tool:not(.tool-select) { width: 36px; padding: 0; justify-content: center; }
+.tool[aria-pressed="true"], .find-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+/* Refresh sits at the right end of both toolbars and stays in view while the row scrolls. */
+.tool-end { position: sticky; right: 0; margin-left: auto; box-shadow: 0 0 0 8px var(--bg), 12px 0 0 8px var(--bg); }
+.tool:active { filter: brightness(1.25); }
+
+.crumbs {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+.crumbs::-webkit-scrollbar { display: none; }
+.crumbs button { flex: none; min-height: 34px; padding: 0 6px; border: 0; border-radius: var(--radius-s); background: none; color: var(--accent-text); }
+.crumbs button:last-child { color: var(--text); font-weight: 600; }
+.crumbs .sep { color: var(--muted); }
+
+.progress { flex: none; position: relative; height: 26px; margin: 0 8px 6px; border-radius: var(--radius-s); background: var(--panel-2); overflow: hidden; }
+/* Stripes that scroll while a transfer runs (off under Reduce Motion, below). */
+.progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: repeating-linear-gradient(45deg, var(--accent-2-soft) 0 10px, color-mix(in srgb, var(--accent-2) 34%, transparent) 10px 20px);
+  background-size: 28.28px 28.28px;
+  transition: width 0.15s;
+  animation: stripes 1s linear infinite;
+}
+@keyframes stripes { to { background-position: 28.28px 0; } }
+.progress-text { position: relative; display: block; padding: 0 10px; font-size: 12px; line-height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.file-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: 20px; }
+.file { position: relative; display: flex; align-items: center; }
+/* The divider starts at the name, past the icon column (14px padding + 26px icon + 12px gap). */
+.file::after { content: ""; position: absolute; left: 52px; right: 0; bottom: 0; border-bottom: 1px solid var(--border); pointer-events: none; }
+.file-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 4px 6px 14px; border: 0; background: none; text-align: left; }
+.file-main:active, .file-more:active { background: var(--panel-2); }
+.file-icon { flex: none; display: flex; width: 26px; justify-content: center; color: var(--muted); }
+.file-icon .icon { width: 24px; height: 24px; }
+/* kind-* rather than the icon name: .file-icon.file would also match the .file row rule. */
+.file-icon.kind-folder { color: var(--accent-2-text); }
+.file-icon.kind-link { color: #79b8ff; }
+.file-icon.kind-warning { color: var(--warn); }
+.file-text { min-width: 0; }
+.file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { color: var(--muted); font-size: 12px; }
+.file-more { flex: none; width: 50px; align-self: stretch; border: 0; background: none; color: var(--muted); }
+.file-more .icon { width: 22px; height: 22px; }
+.file-list .loading, #tab-connections > .loading { display: flex; justify-content: center; padding: 30px; }
+
+/* text editor */
+.dot.dirty { background: var(--warn); }
+/* One scrolling row, like the file toolbar. */
+.editor-toolbar { align-items: center; }
+.tool-select { appearance: none; -webkit-appearance: none; min-width: 0; max-width: 12em; padding-right: 12px; color: var(--text); text-overflow: ellipsis; overflow: hidden; }
+/* find/replace: one row per field; on narrow screens the option toggles move into a menu */
+.find-bar { flex: none; position: relative; z-index: 2; display: flex; flex-direction: column; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--border); background: var(--panel); }
+.find-row { display: flex; align-items: center; gap: 4px; }
+.replace-row { padding-left: 38px; }
+.find-field { flex: 1 1 140px; min-width: 0; display: flex; align-items: center; height: 38px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--bg); }
+.find-field:focus-within { border-color: var(--accent); }
+.find-input { flex: 1; min-width: 0; height: 100%; padding: 0 10px; border: 0; background: none; outline: none; font-size: 16px; /* 16px stops iOS zooming on focus */ }
+.find-input::-webkit-search-cancel-button { display: none; }
+.find-field:has(.find-input.invalid) { border-color: var(--danger); }
+.find-count { flex: none; padding-right: 10px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.find-options { display: flex; gap: 2px; }
+.find-btn, .find-text-btn { -webkit-appearance: none; appearance: none; flex: none; display: inline-flex; align-items: center; justify-content: center; height: 34px; border: 1px solid transparent; border-radius: var(--radius-s); background: none; color: var(--text); }
+.find-btn { width: 34px; padding: 0; }
+.find-btn .icon { width: 20px; height: 20px; }
+.find-btn:active, .find-text-btn:active { background: var(--panel-2); }
+.find-text-btn { height: 36px; padding: 0 10px; border-color: var(--border); background: var(--panel-2); font-size: 14px; }
+.find-text-btn:disabled, .find-btn:disabled { opacity: 0.4; }
+.find-expand .icon { transition: transform 0.15s; }
+.find-expand[aria-expanded="true"] .icon { transform: rotate(90deg); }
+.find-options-wrap { position: relative; flex: none; display: flex; }
+.find-options-toggle { display: none; }
+@media (max-width: 599px) {
+  .find-options-toggle { display: inline-flex; }
+  .find-options-toggle[data-active="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+  .find-options-toggle[aria-expanded="true"] { background: var(--panel-2); }
+  .find-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: -2px;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-m);
+    background: var(--panel-2);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  }
+  .find-options-toggle[aria-expanded="false"] + .find-options { display: none; }
+  .find-options .find-btn { width: 40px; height: 40px; }
+}
+.editor-main { flex: 1; min-height: 0; position: relative; background: var(--screen); }
+.editor-main.loading::after {
+  content: "";
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin-left: -12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--bright);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.editor-status {
+  flex: none;
+  display: flex;
+  justify-content: center; /* away from the rounded screen corners */
+  gap: 12px;
+  padding: 4px 12px calc(4px + var(--safe-bottom-bar));
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+body.kb-open .editor-status { padding-bottom: 4px; }
+.editor-status .ro { color: var(--warn); }
+
+.code-scroll { position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+/* The <pre> sets the size; the textarea covers it exactly with identical metrics. */
+.code-wrap { position: relative; min-width: 100%; min-height: 100%; width: max-content; }
+.code-wrap.wrapped { width: 100%; }
+.code-highlight, .code-input {
+  margin: 0;
+  padding: 10px 12px 40px;
+  border: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+  tab-size: var(--tab-size, 4);
+  -moz-tab-size: var(--tab-size, 4);
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  text-align: left;
+  font-variant-ligatures: none;
+}
+.code-wrap.wrapped .code-highlight, .code-wrap.wrapped .code-input { white-space: pre-wrap; overflow-wrap: anywhere; }
+.code-highlight { min-height: 100%; pointer-events: none; color: var(--code); }
+.code-highlight code.hljs { display: block; padding: 0; background: none; font: inherit; counter-reset: ln; }
+/* One block per line (editor.js htmlLines); an empty line still takes its height. */
+.code-highlight .ln { display: block; position: relative; min-height: 20px; counter-increment: ln; }
+/* Line numbers sit in the left padding of both layers, so the text stays aligned. */
+.code-wrap { --gutter: calc(var(--gutter-digits, 2) * 1ch + 16px); }
+.code-wrap.numbered .code-highlight, .code-wrap.numbered .code-input { padding-left: calc(var(--gutter) + 8px); }
+.code-wrap.numbered .code-highlight .ln::before {
+  content: counter(ln);
+  position: absolute;
+  top: 0;
+  left: calc(-8px - var(--gutter));
+  width: calc(var(--gutter) - 6px);
+  text-align: right;
+  color: var(--gutter-ink);
+}
+.code-wrap.numbered::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: calc(var(--gutter) + 2px); border-right: 1px solid var(--gutter-line); pointer-events: none; }
+.code-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--accent-text);
+  -webkit-text-fill-color: transparent;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+/* Passes focus on to the editor so iOS opens the keyboard (editor.js refocus). 16px: no zoom. */
+.code-focus-proxy { position: fixed; top: 0; left: 0; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; font-size: 16px; pointer-events: none; }
+.code-input::selection { background: rgba(121, 184, 255, 0.35); color: transparent; }
+.code-wrap.stale .code-highlight { visibility: hidden; }
+.code-wrap.stale .code-input { color: var(--code); -webkit-text-fill-color: var(--code); }
+/* Links in a read-only Markdown file can be tapped to follow them. */
+.code-wrap.readonly[data-language="markdown"] .hljs-link { text-decoration: underline; text-underline-offset: 2px; }
+/* Find matches are <mark>s inside the highlighted text, so they wrap with it. No padding: widths must not change. */
+mark.code-match { padding: 0; border-radius: 2px; background: rgba(240, 195, 91, 0.18); color: inherit; }
+mark.code-match.current { background: rgba(240, 195, 91, 0.4); box-shadow: 0 0 0 1px rgba(240, 195, 91, 0.75); }
+
+/* large-file viewer (large-file.js): only the lines on screen exist */
+.editor-main.large .code-scroll { display: none; }
+.big-scroll { position: absolute; inset: 0; overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; overflow-anchor: none; /* the viewer places lines itself */ }
+.big-spacer { position: relative; min-width: 100%; }
+.big-lines { position: absolute; top: 0; left: 0; min-width: 100%; padding: 0 12px; will-change: transform; }
+.big-line {
+  min-height: 20px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 20px;
+  tab-size: var(--tab-size, 4);
+  -moz-tab-size: var(--tab-size, 4);
+  white-space: pre;
+  color: var(--code);
+  font-variant-ligatures: none;
+}
+.big-scroll.wrapped .big-lines { width: 100%; }
+.big-line { position: relative; }
+.big-scroll { --gutter: calc(var(--gutter-digits, 2) * 1ch + 16px); }
+.big-scroll.numbered .big-lines { padding-left: calc(var(--gutter) + 20px); font-family: var(--mono); font-size: 14px; }
+.big-scroll.numbered .big-line::before {
+  content: attr(data-n);
+  position: absolute;
+  top: 0;
+  left: calc(-8px - var(--gutter));
+  width: calc(var(--gutter) - 6px);
+  text-align: right;
+  color: var(--gutter-ink);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.big-scroll.wrapped .big-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* highlight.js tokens in the app's palette */
+.hljs-comment, .hljs-quote, .hljs-meta .hljs-comment { color: #7a7a7a; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-type, .hljs-built_in.hljs-keyword, .hljs-doctag { color: #d2a8ff; }
+.hljs-string, .hljs-regexp, .hljs-addition, .hljs-template-tag, .hljs-template-variable, .hljs-meta .hljs-string { color: #a5d66f; }
+.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-link { color: #f0c35b; }
+.hljs-title, .hljs-title.function_, .hljs-section, .hljs-selector-id { color: #79b8ff; }
+.hljs-title.class_, .hljs-class .hljs-title, .hljs-name, .hljs-selector-class { color: #76e3ea; }
+.hljs-attr, .hljs-attribute, .hljs-variable, .hljs-params, .hljs-property, .hljs-selector-attr, .hljs-selector-pseudo { color: #ffa198; }
+.hljs-built_in, .hljs-meta, .hljs-meta .hljs-keyword { color: #f8d98b; }
+.hljs-deletion { color: #ff7b72; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+.hljs-subst { color: var(--code); }
+
+/* delimited files (CSV, TSV): one colour per column, cycling every 10, starting
+   with orange: orange, red, lilac, teal, brown, green, cyan, yellow, light gray,
+   purple. Tuned to similar lightness so no column stands out,
+   with neighbours far apart in hue; all are 6:1 or more on the editor background. */
+.rcsv-0 { color: #f0a15a; }
+.rcsv-1 { color: #f47a7a; }
+.rcsv-2 { color: #e3a8e8; }
+.rcsv-3 { color: #4fc5b0; }
+.rcsv-4 { color: #c9a27c; }
+.rcsv-5 { color: #a3cf6e; }
+.rcsv-6 { color: #62c6f0; }
+.rcsv-7 { color: #e8d06a; }
+.rcsv-8 { color: #d4d8d6; }
+.rcsv-9 { color: #b39afd; }
+.rcsv-sep { color: #7a7a7a; }
+
+/* snippets + keyboard editor */
+.snippet-cmd { margin-top: 4px; color: var(--muted); font-family: var(--mono); font-size: 13px; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+/* snippet commands, coloured like the editor's code */
+.snippet-run { color: var(--text); }
+.shell-code .sh-command { color: #79b8ff; }
+.shell-code .sh-builtin { color: #79b8ff; }
+.shell-code .sh-keyword { color: #d2a8ff; }
+.shell-code .sh-flag { color: #76e3ea; }
+.shell-code .sh-string { color: #a5d66f; }
+.shell-code .sh-variable { color: #ffa198; }
+.shell-code .sh-number { color: #f0c35b; }
+.shell-code .sh-operator { color: #d2a8ff; }
+.shell-code .sh-comment { color: #7a7a7a; font-style: italic; }
+.shell-code .sh-placeholder { padding: 0 2px; border-radius: 4px; background: rgba(240, 195, 91, 0.16); color: #f0c35b; }
+.editor-key { font-family: var(--mono); min-width: 64px; }
+.editor-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--panel-2); font-size: 15px; }
+.editor-btn .icon { width: 20px; height: 20px; }
+.list-item[data-id] { padding-left: 4px; background: var(--panel); }
+.drag-handle { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-right: -6px; border: 0; background: none; color: var(--muted); cursor: grab; touch-action: none; }
+.drag-handle .icon { width: 22px; height: 22px; }
+/* A snippet card is dragged by a handle down its left edge. */
+.card > .drag-handle { align-self: center; margin: 0 -8px 0 2px; }
+/* Dragging one to reorder it: the row keeps its place, faded, while a copy of
+   it rides under the finger and a line marks the gap it would drop into. Both
+   lists position the line against themselves (flex on .cards also stops the
+   last card's margin collapsing away, so a drop at the end has room to show). */
+.cards, .list { position: relative; }
+.cards { display: flex; flex-direction: column; }
+.drag-source { opacity: 0.3; }
+.drag-ghost {
+  position: fixed;
+  z-index: 120;
+  margin: 0;
+  pointer-events: none;
+  border-radius: var(--radius-l);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+.drag-ghost .drag-handle { cursor: grabbing; color: var(--text); }
+.drag-ghost.list-item { border: 1px solid var(--border); }
+.drop-line { position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px; background: var(--accent); }
+.add-key { margin-top: 10px; }
+.key-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.key-choice { min-width: 44px; height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--panel-2); font-family: var(--mono); font-size: 15px; }
+
+@media (min-width: 700px) {
+  .tab { max-width: 640px; margin: 0 auto; }
+}
+
+/* Server identity: a monogram tinted with the server's hue (theme.css
+   --hue-N, serverHue in app.js). The letter is drawn from data-letter, so it
+   stays out of the card's text. */
+.hue-0 { --hue: var(--hue-0); }
+.hue-1 { --hue: var(--hue-1); }
+.hue-2 { --hue: var(--hue-2); }
+.hue-3 { --hue: var(--hue-3); }
+.hue-4 { --hue: var(--hue-4); }
+.hue-5 { --hue: var(--hue-5); }
+.hue-6 { --hue: var(--hue-6); }
+.hue-7 { --hue: var(--hue-7); }
+.monogram {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--hue, var(--muted)) 18%, transparent);
+  color: var(--hue, var(--muted));
+  font-size: 16px;
+  font-weight: 700;
+}
+.monogram::before { content: attr(data-letter); }
+.monogram.small { width: 26px; height: 26px; font-size: 13px; }
+.card-main.has-monogram { display: flex; align-items: center; gap: 12px; }
+.card-body { flex: 1; min-width: 0; }
+.sheet-head h2 .monogram { margin-right: 8px; vertical-align: middle; }
+
+/* Files has its own topbar: back through the folders visited, the folder's
+   name (opens Go to), and the favorites star. */
+.back-btn { gap: 0; max-width: 40%; padding: 0 10px 0 4px; font-size: 16px; }
+.back-btn .icon { margin-right: -4px; }
+.back-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#files-title { justify-content: center; font-family: var(--mono); font-size: 15px; }
+#files-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#files-star { color: var(--muted); }
+#files-star[aria-pressed="true"] { color: var(--accent-3); }
+.goto .list-item .icon { color: var(--accent-2-text); }
+.goto .goto-favorites .list-item .icon { color: var(--accent-3); }
+/* Go to: a favorite is a row that opens it, with a small x that removes it. */
+.goto-row { position: relative; display: flex; align-items: center; padding-right: 6px; }
+.goto-row .list-item.button { flex: 1; min-width: 0; }
+.goto-row .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goto-row + .goto-row::before { content: ""; position: absolute; top: 0; left: 46px; right: 0; border-top: 1px solid var(--border); pointer-events: none; }
+
+/* Press, hover and keyboard focus look the same everywhere. */
+.btn, .tool, .round-btn, .card-main, .card-side, .list-item.button, .file-main, .file-more, .icon-btn, .text-btn, .find-btn, .find-text-btn, .editor-btn, .key-choice {
+  transition: background-color 0.15s, color 0.15s, transform 0.12s;
+}
+@media (hover: hover) {
+  .card-main:hover, .card-side:hover, .list-item.button:hover, .file-main:hover, .file-more:hover,
+  .icon-btn:hover, .text-btn:hover, .tool:hover, .btn:not(.primary):hover { background: var(--panel-2); }
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible, .find-input:focus-visible, .code-input:focus-visible, .code-focus-proxy:focus-visible { outline: none; }
+
+/* Phone accessory keys: one swipeable row per keyboard page. */
+.phone-keybar .keyrow { height: 42px; }
+.phone-keybar .keys { padding: 0 3px; }
+.phone-keybar .key { min-width: 38px; height: 34px; padding: 0 9px; font-size: 15px; }
+.phone-keybar .key.wide, .phone-keybar .key.icon-key { font-size: 13px; }
+.phone-keybar .keys-fixed { padding: 0 3px 0 5px; }
+.phone-keybar .keys-fixed .key { min-width: 40px; padding: 0 8px; }
+
+/* Phone and tablet keyboard, mounted below the accessory row by MobileKeyboard.
+   A letter key is a tenth of the row, less the nine gaps between. */
+.mobile-keyboard {
+  --gap: 5px;
+  --letter: calc((100% - 9 * var(--gap)) / 10);
+  flex: none;
+  padding: 6px 3px;
+  background: var(--panel);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.mobile-keyboard[hidden] { display: none; }
+.mobile-keyrow { display: flex; gap: var(--gap); margin-bottom: 7px; }
+.mobile-keyrow:last-child { margin-bottom: 0; }
+.mobile-keyrow.inset { padding: 0 5%; }
+.mobile-key {
+  flex: 1;
+  min-width: 0;
+  height: 43px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--key);
+  color: var(--text);
+  font-size: 21px;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: 0 1px 0 var(--key-shadow);
+}
+.mobile-key.action { flex: 1.4; background: var(--key-action); font-size: 16px; }
+.mobile-key.shortcut { font-size: 16px; color: var(--warn); }
+.mobile-key.arrow { font-size: 22px; }
+.mobile-key.nav { font-size: 13px; background: var(--key-action); }
+.mobile-key.nav[data-mobile-key="bksp"] { font-size: 16px; }
+.mobile-keyrow.bottom .mobile-key { flex: 0 0 var(--letter); font-size: 14px; }
+.mobile-keyrow.bottom .mobile-key.mode { flex-basis: calc(var(--letter) * 1.4 + var(--gap) * 0.4); background: var(--key-action); font-size: 15px; }
+.mobile-keyrow.bottom .mobile-key.space { flex: 1 1 auto; }
+.mobile-keyrow.bottom .mobile-key.enter { flex-basis: calc(var(--letter) * 2 + var(--gap)); background: var(--bright); color: var(--bright-ink); font-size: 15px; }
+.mobile-key.pressed { background: var(--key-pressed); }
+.mobile-key[aria-pressed="true"] { background: var(--bright); color: var(--bright-ink); }
+.mobile-key.locked { box-shadow: inset 0 -3px 0 var(--bright-ink), 0 1px 0 var(--key-shadow); text-decoration: underline; }
+/* The pressed character and touch and hold choices, drawn above the key with
+   a stem down to it (MobileKeyboard sets the size and --stem-*). */
+.mobile-key-popup {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: var(--radius-s);
+  background: var(--popup);
+  color: var(--text);
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+}
+.mobile-key-popup::after {
+  content: '';
+  position: absolute;
+  top: calc(100% - 1px);
+  left: var(--stem-left);
+  width: var(--stem-width);
+  height: var(--stem-height);
+  border-radius: 0 0 6px 6px;
+  background: inherit;
+}
+.mobile-key-popup.preview { font-size: 32px; }
+.mobile-key-popup.menu { justify-content: flex-start; padding: 0 4px; font-size: 22px; }
+.mobile-key-popup.menu.words { font-size: 16px; }
+.mobile-key-popup .option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100% - 8px);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.mobile-key-popup .option.selected { background: var(--bright); color: var(--bright-ink); }
+@media (max-width: 340px) {
+  .mobile-keyrow.bottom .mobile-key, .mobile-key.nav { font-size: 12px; }
+  .mobile-key.shortcut { font-size: 14px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-keyboard { padding-top: 3px; padding-bottom: 3px; }
+  .mobile-keyrow { margin-bottom: 4px; }
+  .mobile-key { height: 30px; font-size: 18px; }
+  .phone-keybar .keyrow { height: 38px; }
+  .phone-keybar .key { height: 30px; }
+}
+/* Same devices as PhoneTerminal.media. */
+@media (pointer: coarse), (max-width: 700px) {
+  /* FitAddon subtracts padding on xterm itself, not on its parent. This
+     keeps the final row above the accessory keys when the keyboard opens. */
+  .term { padding: 0; }
+  .term .xterm { padding: 4px 0 0 6px; }
+  /* A long press opens the app's Paste menu, not the iOS callout. */
+  .term { -webkit-touch-callout: none; }
+  /* Touch scrollback is handled by PhoneTerminal; prevent page panning. */
+  .term .xterm-screen { touch-action: pan-x; }
+  #view-session .topbar, #view-editor .topbar { min-height: calc(44px + var(--safe-top)); }
+}
+
+/* Reduce Motion: things fade in rather than slide (the script-driven
+   animations check reducedMotion themselves). Last, so it wins. */
+@media (prefers-reduced-motion: reduce) {
+  .view.active, .tab.active, .panel.active, .sheet { animation-name: fade; }
+  .progress-bar { animation: none; }
+}
